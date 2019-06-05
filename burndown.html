@@ -44,7 +44,8 @@
 		<script src="modules/d3js.js"></script>
 		<script type="text/javascript">
 			var currentStoryPointField = 'Microsoft.VSTS.Scheduling.Effort';
-			
+			var workItemTypeFilter;
+
 			VSS.init({                        
 				explicitNotifyLoaded: true,
 				usePlatformStyles: true
@@ -127,7 +128,14 @@
 						
 							if(Date.parse(sprintDayCollection[i].Date) <= todayInfo) {
 							
-								var query = {query: "SELECT [System.Id] FROM WorkItem WHERE System.AreaPath='" + areaPath + "' AND [System.IterationPath]='" + currentIterations[currentIteration].path + "' AND [System.State] IN (" + includedFields + ") ASOF '" + sprintDayCollection[i].Date.toISOString() + "'" };
+								var query = {query: "SELECT [System.Id] FROM WorkItem WHERE System.AreaPath='" + areaPath + "' AND [System.IterationPath]='" + currentIterations[currentIteration].path + "' AND [System.State] IN (" + includedFields + ")" };
+								
+								if(workItemTypeFilter) {
+									query.query = query.query + " AND [System.WorkItemType] IN (" + workItemTypeFilter + ")";
+								};
+								
+								query.query = query.query + " ASOF '" + sprintDayCollection[i].Date.toISOString() + "'";
+								
 								witClient.queryByWiql(query, webContext.project.id).then(
 									function(result) {
 										var idCollection = [];
@@ -205,6 +213,8 @@
 									.then(function (project) {
 										if(project.capabilities.processTemplate.templateName.indexOf('Agile') > -1) {
 											currentStoryPointField = 'Microsoft.VSTS.Scheduling.StoryPoints';
+											//For Agile templates only User Stories and Bugs have the StoryPoints field
+											workItemTypeFilter = "'User Story', 'Bug'";
 										}
 									});
 							
